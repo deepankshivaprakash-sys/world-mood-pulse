@@ -14,7 +14,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- MOCK DATA ENGINE ---
+# --- DATA ENGINE ---
 @st.cache_data
 def generate_mock_database():
     # 1. Historical Data (Last 30 Days)
@@ -24,27 +24,68 @@ def generate_mock_database():
     
     history_records = []
     for d in dates:
-        # Dirichlet distribution guarantees percentages sum to exactly 100%
         scores = np.random.dirichlet(np.ones(5) * 5) * 100
         history_records.append({
             'Date': d.strftime('%Y-%m-%d'),
-            'Fear': round(scores[0], 1),
-            'Anger': round(scores[1], 1),
-            'Happiness': round(scores[2], 1),
-            'Sadness': round(scores[3], 1),
-            'Neutral': round(scores[4], 1)
+            'Fear': round(scores, 1),
+            'Anger': round(scores, 1),
+            'Happiness': round(scores, 1),
+            'Sadness': round(scores, 1),
+            'Neutral': round(scores, 1)
         })
     df_history = pd.DataFrame(history_records)
     
-    # 2. Live Headlines with metadata
+    # 2. Live Headlines with Metadata and Source URLs
     headlines_pool = [
-        {"headline": "Global Stock Markets Plunge Amid Inflation Worries", "emotion": "Fear", "country": "USA", "summary": "Financial markets are contracting sharply due to concerns over high interest rates, leading to a rise in global anxiety indices."},
-        {"headline": "Geopolitical Tensions Escalate Following Fresh Border Disputes", "emotion": "Anger", "country": "UKR", "summary": "Diplomatic friction and localized enforcement escalations have led to a sharp increase in cross-border citizen anger."},
-        {"headline": "Breakthrough Treatment Shows 95% Success Rate in Clinical Trials", "emotion": "Happiness", "country": "GBR", "summary": "The global medical community celebrates a monumental leap forward, sparking optimistic health projections."},
-        {"headline": "Devastating Earthquake Displaces Thousands in Coastal Communities", "emotion": "Sadness", "country": "IDN", "summary": "International humanitarian groups are deploying resources to assist local operations following structural damage and loss of life."},
-        {"headline": "Central Bank Announces Routine Interest Policy Realignment", "emotion": "Neutral", "country": "DEU", "summary": "A standard economic structural update concluded with minimal deviation from estimated public market baselines."},
-        {"headline": "Renewable Energy Inversions Hit Record High Efficiency Milestones", "emotion": "Happiness", "country": "CHN", "summary": "Climate targets are tracking ahead of schedule, driving up positive sentiment metrics across environmental platforms."},
-        {"headline": "Major Cyberattack Compromises Power Grids Across Major Metropolitan Areas", "emotion": "Fear", "country": "CAN", "summary": "Widespread utility shutdowns have induced localized civil panics and security vulnerability responses."}
+        {
+            "headline": "Global Stock Markets Plunge Amid Inflation Worries", 
+            "emotion": "Fear", 
+            "country": "USA", 
+            "summary": "Financial markets are contracting sharply due to concerns over high interest rates, leading to a rise in global anxiety indices.",
+            "url": "https://reuters.com"
+        },
+        {
+            "headline": "Geopolitical Tensions Escalate Following Fresh Border Disputes", 
+            "emotion": "Anger", 
+            "country": "UKR", 
+            "summary": "Diplomatic friction and localized enforcement escalations have led to a sharp increase in cross-border citizen anger.",
+            "url": "https://bbc.com"
+        },
+        {
+            "headline": "Breakthrough Treatment Shows 95% Success Rate in Clinical Trials", 
+            "emotion": "Happiness", 
+            "country": "GBR", 
+            "summary": "The global medical community celebrates a monumental leap forward, sparking optimistic health projections.",
+            "url": "https://nature.com"
+        },
+        {
+            "headline": "Devastating Earthquake Displaces Thousands in Coastal Communities", 
+            "emotion": "Sadness", 
+            "country": "IDN", 
+            "summary": "International humanitarian groups are deploying resources to assist local operations following structural damage and loss of life.",
+            "url": "https://apnews.com"
+        },
+        {
+            "headline": "Central Bank Announces Routine Interest Policy Realignment", 
+            "emotion": "Neutral", 
+            "country": "DEU", 
+            "summary": "A standard economic structural update concluded with minimal deviation from estimated public market baselines.",
+            "url": "https://bloomberg.com"
+        },
+        {
+            "headline": "Renewable Energy Inversions Hit Record High Efficiency Milestones", 
+            "emotion": "Happiness", 
+            "country": "CHN", 
+            "summary": "Climate targets are tracking ahead of schedule, driving up positive sentiment metrics across environmental platforms.",
+            "url": "https://techcrunch.com"
+        },
+        {
+            "headline": "Major Cyberattack Compromises Power Grids Across Major Metropolitan Areas", 
+            "emotion": "Fear", 
+            "country": "CAN", 
+            "summary": "Widespread utility shutdowns have induced localized civil panics and security vulnerability responses.",
+            "url": "https://wired.com"
+        }
     ]
     df_headlines = pd.DataFrame(headlines_pool)
     
@@ -55,7 +96,7 @@ def generate_mock_database():
         c_scores = np.random.dirichlet(np.ones(5) * 10) * 100
         map_records.append({
             'CountryISO': c,
-            'Fear': c_scores[0], 'Anger': c_scores[1], 'Happiness': c_scores[2], 'Sadness': c_scores[3], 'Neutral': c_scores[4],
+            'Fear': c_scores, 'Anger': c_scores, 'Happiness': c_scores, 'Sadness': c_scores, 'Neutral': c_scores,
             'Dominant': ['Fear', 'Anger', 'Happiness', 'Sadness', 'Neutral'][np.argmax(c_scores)]
         })
     df_map = pd.DataFrame(map_records)
@@ -68,7 +109,7 @@ df_history, df_headlines, df_map = generate_mock_database()
 st.title("🌍 World Mood Pulse Dashboard")
 st.caption("Real-Time Global Sentiment Analysis Powered by NLP Transformers & Live Headings Pipeline")
 
-# AI-Generated Daily Report Box
+# AI Pulse Summary Box
 st.markdown("### 🤖 Automated Pulse Summary")
 st.markdown("""
 <div class="report-box">
@@ -115,7 +156,9 @@ with left_panel:
         for idx, row in filtered_news.iterrows():
             st.markdown(f"#### 📰 {row['headline']}")
             st.markdown(f"**Origin Country:** `{row['country']}`")
-            st.markdown(f"*AI Reason Synthesis:* {row['summary']}")
+            st.markdown(f"*AI Reason Summary:* {row['summary']}")
+            # 🔗 THIS ADDS THE CLICKABLE LINK BUTTON BELOW EACH SUMMARY
+            st.markdown(f"🔗 [Read Detailed Article on {row['headline'].split()[0]}...]({row['url']})")
             st.markdown("---")
     else:
         st.write("No major headline spikes currently registered for this metric channel.")
