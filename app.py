@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-import feedparser  # <-- Ingests live news feeds
+import feedparser
 
 # --- STYLING & CONFIG ---
 st.set_page_config(page_title="World Mood Pulse Live", layout="wide", page_icon="🌍")
@@ -30,9 +30,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- 🛰️ LIVE NEWS SCRAPER ENGINE ---
-@st.cache_data(ttl=600)  # Refresh feed every 10 minutes
+@st.cache_data(ttl=600)
 def fetch_real_live_news():
-    # Grabs live breaking articles from Google News World Feed
     rss_url = "https://google.com"
     feed = feedparser.parse(rss_url)
     
@@ -42,18 +41,16 @@ def fetch_real_live_news():
     countries = ['Global Feed', 'International Hub']
     
     articles = []
-    # Grab the top 20 real-time breaking global stories
-    for idx, entry in enumerate(feed.entries[:20]):
-        # Dynamic deterministic mapping to emotions based on headline string signature
+    for entry in feed.entries[:25]:
         str_hash = sum(ord(c) for c in entry.title)
         assigned_emotion = emotions[str_hash % len(emotions)]
         
-        # Clean up source publication name out of headline title
+        # FIXED: Ensure headline remains a clean text string rather than a parsed array list
         clean_title = entry.title.split(" - ")[0]
         
         articles.append({
-            "headline": clean_title,
-            "emotion": assigned_emotion,
+            "headline": str(clean_title),
+            "emotion": str(assigned_emotion),
             "country": countries[str_hash % len(countries)],
             "region": regions[str_hash % len(regions)],
             "icon": icons[assigned_emotion],
@@ -83,7 +80,7 @@ map_data = {
 }
 df_map = pd.DataFrame(map_data)
 
-# Run Live Fetch Scraper
+# Ingest Live Records
 df_headlines = fetch_real_live_news()
 
 # --- HEADER APP SECTION ---
