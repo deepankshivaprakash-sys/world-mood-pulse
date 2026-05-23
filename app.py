@@ -450,6 +450,16 @@ with right_panel:
         """
         st.markdown(card_html, unsafe_allow_html=True)
         
+    st.markdown("---")
+    
+    # --- GLOBAL HEATMAP SECTION ---
+    st.markdown("### 🗺️ World Emotion Spatial Layout")
+    st.caption("Aggregated map distribution indicating dominant underlying sentiment classifications by border sector.")
+    fig_map = px.choropleth(df_map, locations="CountryISO", color=selected_emotion,
+                            hover_name="CountryISO", color_continuous_scale=px.colors.sequential.Plasma)
+    fig_map.update_layout(geo=dict(showframe=False, projection_type='equirectangular'))
+    st.plotly_chart(fig_map, use_container_width=True)
+        
 
 
 
@@ -711,15 +721,8 @@ fig_composite.update_xaxes(title_text="Timeline Records (30 Days)", row=2, col=1
 
 st.plotly_chart(fig_composite, use_container_width=True)
 
-st.markdown("---")
 
-# --- GLOBAL HEATMAP SECTION ---
-st.markdown("### 🗺️ World Emotion Spatial Layout")
-st.caption("Aggregated map distribution indicating dominant underlying sentiment classifications by border sector.")
-fig_map = px.choropleth(df_map, locations="CountryISO", color=selected_emotion,
-                        hover_name="CountryISO", color_continuous_scale=px.colors.sequential.Plasma)
-fig_map.update_layout(geo=dict(showframe=False, projection_type='equirectangular'))
-st.plotly_chart(fig_map, use_container_width=True)
+
 
 
 
