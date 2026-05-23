@@ -6,18 +6,51 @@ import plotly.graph_objects as go
 from datetime import datetime, timedelta
 
 # --- STYLING & CONFIG ---
-st.set_page_config(page_title="World Mood Pulse", layout="wide", page_icon="🌍")
+st.set_page_config(page_title="World Mood Pulse Pro", layout="wide", page_icon="🌍")
+
+# Enhanced Custom Card Styles via CSS Injection
 st.markdown("""
     <style>
-    .metric-card {background-color: #f0f2f6; padding: 20px; border-radius: 10px; text-align: center;}
-    .report-box {background-color: #e8f4f8; padding: 15px; border-radius: 8px; border-left: 5px solid #29b5e8;}
+    .news-card {
+        background-color: #ffffff; 
+        padding: 24px; 
+        border-radius: 12px; 
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+        margin-bottom: 20px;
+        border-left: 6px solid #29b5e8;
+    }
+    .fear-card { border-left-color: #d9534f; }
+    .anger-card { border-left-color: #f0ad4e; }
+    .happiness-card { border-left-color: #5cb85c; }
+    .sadness-card { border-left-color: #0275d8; }
+    .neutral-card { border-left-color: #292b2c; }
+    
+    .news-tag {
+        background-color: #eef2f5;
+        padding: 4px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: bold;
+        color: #4a5568;
+    }
+    .img-placeholder {
+        background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+        height: 140px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        font-size: 28px;
+        margin-bottom: 12px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# --- DATA ENGINE ---
+# --- ADVANCED LARGE-VOLUME DATA ECOSYSTEM ---
 @st.cache_data
-def generate_mock_database():
-    # 1. Historical Data (Last 30 Days)
+def generate_rich_database():
+    # 1. Historical Trends Matrix
     np.random.seed(42)
     dates = [datetime.now() - timedelta(days=i) for i in range(30)]
     dates.reverse()
@@ -25,101 +58,91 @@ def generate_mock_database():
     history_records = []
     for d in dates:
         scores = np.random.dirichlet(np.ones(5) * 5) * 100
-        # Fixed array rounding using np.round instead of standard round
         history_records.append({
             'Date': d.strftime('%Y-%m-%d'),
-            'Fear': np.round(scores[0], 1),
-            'Anger': np.round(scores[1], 1),
-            'Happiness': np.round(scores[2], 1),
-            'Sadness': np.round(scores[3], 1),
-            'Neutral': np.round(scores[4], 1)
+            'Fear': np.round(scores, 1), 'Anger': np.round(scores, 1),
+            'Happiness': np.round(scores, 1), 'Sadness': np.round(scores, 1), 'Neutral': np.round(scores, 1)
         })
     df_history = pd.DataFrame(history_records)
     
-    # 2. Live Headlines with Metadata and Source URLs
+    # 2. Rich Deep Articles (Expanded Scope & Layout Data)
     headlines_pool = [
         {
-            "headline": "Global Stock Markets Plunge Amid Inflation Worries", 
-            "emotion": "Fear", 
-            "country": "USA", 
-            "summary": "Financial markets are contracting sharply due to concerns over high interest rates, leading to a rise in global anxiety indices.",
+            "headline": "Global Stock Indices Plunge 4.2% Triggering Circuit Breakers Worldwide", 
+            "emotion": "Fear", "country": "USA", "region": "North America", "icon": "📉",
+            "detailed_analysis": "Widespread panic hit global trading floors today as unexpected inflation metrics sparked fears of prolonged high interest rates. Financial analysts suggest a major corrections cycle is underway, forcing immediate defensive asset management.",
             "url": "https://reuters.com"
         },
         {
-            "headline": "Geopolitical Tensions Escalate Following Fresh Border Disputes", 
-            "emotion": "Anger", 
-            "country": "UKR", 
-            "summary": "Diplomatic friction and localized enforcement escalations have led to a sharp increase in cross-border citizen anger.",
+            "headline": "Cybersecurity Breaches Compromise Infrastructure Hubs Across Three Capitals", 
+            "emotion": "Fear", "country": "CAN", "region": "Global Security", "icon": "🔒",
+            "detailed_analysis": "A coordinated digital assault has targeting power management nodes and metropolitan transit signals. Defense taskforces are actively managing structural patches while citizens express growing security vulnerabilities.",
+            "url": "https://wired.com"
+        },
+        {
+            "headline": "Border Access Disagreements Lead to Stiff Commercial Embargos", 
+            "emotion": "Anger", "country": "UKR", "region": "Eastern Europe", "icon": "🚫",
+            "detailed_analysis": "Diplomatic talks fractured completely following enforcement updates, resulting in massive shipping supply freezes. Local consumer organizations are mobilizing protests over resulting import price hikes.",
             "url": "https://bbc.com"
         },
         {
-            "headline": "Breakthrough Treatment Shows 95% Success Rate in Clinical Trials", 
-            "emotion": "Happiness", 
-            "country": "GBR", 
-            "summary": "The global medical community celebrates a monumental leap forward, sparking optimistic health projections.",
-            "url": "https://nature.com"
-        },
-        {
-            "headline": "Devastating Earthquake Displaces Thousands in Coastal Communities", 
-            "emotion": "Sadness", 
-            "country": "IDN", 
-            "summary": "International humanitarian groups are deploying resources to assist local operations following structural damage and loss of life.",
+            "headline": "Public Transit Union Stages City-Wide Walkouts Over Structural Contracts", 
+            "emotion": "Anger", "country": "FRA", "region": "Western Europe", "icon": "📢",
+            "detailed_analysis": "Commuters face massive scheduling standstills as negotiation deadlines expired with no settlement. High frustration values are registered across urban community forums regarding municipal management frameworks.",
             "url": "https://apnews.com"
         },
         {
-            "headline": "Central Bank Announces Routine Interest Policy Realignment", 
-            "emotion": "Neutral", 
-            "country": "DEU", 
-            "summary": "A standard economic structural update concluded with minimal deviation from estimated public market baselines.",
-            "url": "https://bloomberg.com"
+            "headline": "Medical Breakthrough: Universal Vaccine Demonstrates 95% Efficacy Rate", 
+            "emotion": "Happiness", "country": "GBR", "region": "Global Health", "icon": "🧬",
+            "detailed_analysis": "An unprecedented milestone in immunotherapy has cleared advanced peer-review phases. Healthcare indicators across all regions are signaling long-term macroeconomic optimism as global deployment logs prepare for initial rollout pipelines.",
+            "url": "https://nature.com"
         },
         {
-            "headline": "Renewable Energy Inversions Hit Record High Efficiency Milestones", 
-            "emotion": "Happiness", 
-            "country": "CHN", 
-            "summary": "Climate targets are tracking ahead of schedule, driving up positive sentiment metrics across environmental platforms.",
+            "headline": "Renewable Fusion Inverters Achieve Sustained Net Energy Influx Thresholds", 
+            "emotion": "Happiness", "country": "CHN", "region": "East Asia", "icon": "☀️",
+            "detailed_analysis": "Engineering teams confirmed a clean energy generation run that significantly surpassed previous thermal performance metrics. Clean-tech investment channels are observing immense upward sentiment spikes.",
             "url": "https://techcrunch.com"
         },
         {
-            "headline": "Major Cyberattack Compromises Power Grids Across Major Metropolitan Areas", 
-            "emotion": "Fear", 
-            "country": "CAN", 
-            "summary": "Widespread utility shutdowns have induced localized civil panics and security vulnerability responses.",
-            "url": "https://wired.com"
+            "headline": "Severe Tsunami Surge Inundates Coastal Agricultural Zones, Thousands Scattered", 
+            "emotion": "Sadness", "country": "IDN", "region": "Southeast Asia", "icon": "🌊",
+            "detailed_analysis": "A massive structural disaster system has destroyed vital community property arrays. Humanitarian groups have declared regional priority support statuses to handle medical infrastructure supply issues.",
+            "url": "https://apnews.com"
+        },
+        {
+            "headline": "Historic Library and Archive Matrix Destroyed in Massive Metropolitan Blaze", 
+            "emotion": "Sadness", "country": "BRA", "region": "South America", "icon": "🏛️",
+            "detailed_analysis": "Invaluable literature documents and cultural monuments spanning centuries were lost to an absolute containment breach. Global academic networks describe the structural loss as a profound blow to preservation research.",
+            "url": "https://bbc.com"
+        },
+        {
+            "headline": "Central Monetary Authority Maintains Current Lending Benchmarks Unchanged", 
+            "emotion": "Neutral", "country": "DEU", "region": "Eurozone", "icon": "⚖️",
+            "detailed_analysis": "The regional board concluded its standard audit with full consensus, adjusting no asset variables. Markets have factored this neutrality calculation directly into current structural baseline projections.",
+            "url": "https://bloomberg.com"
         }
     ]
     df_headlines = pd.DataFrame(headlines_pool)
     
-    # 3. Country Map Baseline Data
+    # 3. Country Geographics
     countries = ['USA', 'CHN', 'GBR', 'DEU', 'IND', 'BRA', 'ZAF', 'IDN', 'CAN', 'UKR']
     map_records = []
     for c in countries:
         c_scores = np.random.dirichlet(np.ones(5) * 10) * 100
         map_records.append({
             'CountryISO': c,
-            'Fear': c_scores[0], 'Anger': c_scores[1], 'Happiness': c_scores[2], 'Sadness': c_scores[3], 'Neutral': c_scores[4],
+            'Fear': c_scores, 'Anger': c_scores, 'Happiness': c_scores, 'Sadness': c_scores, 'Neutral': c_scores,
             'Dominant': ['Fear', 'Anger', 'Happiness', 'Sadness', 'Neutral'][np.argmax(c_scores)]
         })
     df_map = pd.DataFrame(map_records)
     
     return df_history, df_headlines, df_map
 
-df_history, df_headlines, df_map = generate_mock_database()
+df_history, df_headlines, df_map = generate_rich_database()
 
 # --- HEADER APP SECTION ---
-st.title("🌍 World Mood Pulse Dashboard")
-st.caption("Real-Time Global Sentiment Analysis Powered by NLP Transformers & Live Headings Pipeline")
-
-# AI Pulse Summary Box
-st.markdown("### 🤖 Automated Pulse Summary")
-st.markdown("""
-<div class="report-box">
-<strong>Why the world feels anxious today:</strong> Global metrics show a dominant elevation in 
-<strong>Fear (28.6%)</strong> and <strong>Happiness (28.6%)</strong>. Anxieties are fueled by sudden stock corrections 
-and infrastructure cybersecurity alarms in North America, while breakthroughs in medical science clinical trials 
-and green energy milestones in East Asia prevent systemic despair.
-</div>
-""", unsafe_allow_html=True)
+st.title("🌍 World Mood Pulse Pro")
+st.caption("Advanced Real-Time Global Sentiment Engine • Structural Dashboard Matrix")
 st.write("")
 
 # --- LIVE METRIC PULSE DISPLAY ---
@@ -129,83 +152,39 @@ col1, col2, col3, col4, col5 = st.columns(5)
 total_h = len(df_headlines)
 pulse_vals = {em: round((len(df_headlines[df_headlines['emotion'] == em]) / total_h) * 100, 1) for em in ['Fear', 'Anger', 'Happiness', 'Sadness', 'Neutral']}
 
-with col1: st.metric("😨 Fear", f"{pulse_vals['Fear']}%", delta="-2.4% vs yesterday")
-with col2: st.metric("😡 Anger", f"{pulse_vals['Anger']}%", delta="+5.1% vs yesterday", delta_color="inverse")
-with col3: st.metric("😊 Happiness", f"{pulse_vals['Happiness']}%", delta="+1.2% vs yesterday")
-with col4: st.metric("😢 Sadness", f"{pulse_vals['Sadness']}%", delta="-0.8% vs yesterday")
-with col5: st.metric("😐 Neutral", f"{pulse_vals['Neutral']}%", delta="-3.1% vs yesterday")
+with col1: st.metric("😨 Fear Index", f"{pulse_vals['Fear']}%", delta="+4.2%")
+with col2: st.metric("😡 Anger Index", f"{pulse_vals['Anger']}%", delta="+1.8%")
+with col3: st.metric("😊 Happiness Index", f"{pulse_vals['Happiness']}%", delta="-0.5%")
+with col4: st.metric("😢 Sadness Index", f"{pulse_vals['Sadness']}%", delta="+2.1%")
+with col5: st.metric("😐 Neutral Index", f"{pulse_vals['Neutral']}%", delta="-7.6%")
 
 st.markdown("---")
 
 # --- CLICKABLE INTERACTIVE EXPLORER ---
-st.markdown("### 🔍 Emotion Deep-Dive Explorer")
-st.info("Click an emotion below to isolate tracking streams, regional contribution logs, and contextual AI summaries.")
-
+st.markdown("### 🔍 Emotion Deep-Dive Explorer & Rich Media Feed")
 selected_emotion = st.radio(
     "Select Target Emotion Engine to Filter Data Ecosystem:",
     ["Fear", "Anger", "Happiness", "Sadness", "Neutral"],
     horizontal=True
 )
 
-left_panel, right_panel = st.columns(2)
+left_panel, right_panel = st.columns([3, 2]) # 3:2 layout gives the news feed more screen size
 
 with left_panel:
-    st.subheader(f"Associated Articles & Headlines: {selected_emotion}")
+    st.subheader(f"📰 Premium Analytical Coverage: {selected_emotion}")
     filtered_news = df_headlines[df_headlines['emotion'] == selected_emotion]
     
     if not filtered_news.empty:
         for idx, row in filtered_news.iterrows():
-            st.markdown(f"#### 📰 {row['headline']}")
-            st.markdown(f"**Origin Country:** `{row['country']}`")
-            st.markdown(f"*AI Reason Summary:* {row['summary']}")
-            # 🔗 Clickable markdown hyperlink setup
-            st.markdown(f"🔗 [Read Detailed Article here]({row['url']})")
-            st.markdown("---")
-    else:
-        st.write("No major headline spikes currently registered for this metric channel.")
-
-with right_panel:
-    st.subheader("Regional Vulnerability Contribution")
-    fig_pie = px.pie(df_map, values=selected_emotion, names='CountryISO', 
-                     title=f"Top Country Impact Variables for {selected_emotion}",
-                     color_discrete_sequence=px.colors.sequential.Plotly3)
-    fig_pie.update_layout(margin=dict(l=20, r=20, t=40, b=20))
-    st.plotly_chart(fig_pie, use_container_width=True)
-
-st.markdown("---")
-
-# --- TIME SERIES HISTORICAL TREND GRAPHS ---
-st.markdown("### 📈 Historical Sentimental Trajectories")
-time_filter = st.selectbox("Set Analytical Horizon Scope:", ["Past Week", "Past Month", "Past Year", "5 Year Macro View"])
-
-if time_filter == "Past Week":
-    display_df = df_history.tail(7)
-else:
-    display_df = df_history
-
-fig_trend = go.Figure()
-for emotion in ['Fear', 'Anger', 'Happiness', 'Sadness', 'Neutral']:
-    fig_trend.add_trace(go.Scatter(x=display_df['Date'], y=display_df[emotion], mode='lines+markers', name=emotion))
-
-fig_trend.update_layout(
-    title=f"Emotion Fluctuations and Micro-Spikes ({time_filter})",
-    xaxis_title="Timeline Records",
-    yaxis_title="Pulse Percentage Allocation (%)",
-    hovermode="x unified",
-    legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-)
-st.plotly_chart(fig_trend, use_container_width=True)
-
-# --- GLOBAL HEATMAP SECTION ---
-st.markdown("### 🗺️ World Emotion Spatial Layout")
-st.caption("Aggregated map distribution indicating dominant underlying sentiment classifications by border sector.")
-
-fig_map = px.choropleth(df_map, 
-                        locations="CountryISO", 
-                        color=selected_emotion,
-                        hover_name="CountryISO",
-                        hover_data=["Dominant", "Fear", "Anger", "Happiness", "Sadness"],
-                        color_continuous_scale=px.colors.sequential.Plasma)
-
-fig_map.update_layout(geo=dict(showframe=False, showcoastlines=True, projection_type='equirectangular'))
-st.plotly_chart(fig_map, use_container_width=True)
+            # Injects dynamic style blocks based on the selected emotion class
+            card_class = f"news-card {selected_emotion.lower()}-card"
+            
+            st.markdown(f"""
+            <div class="{card_class}">
+                <div class="img-placeholder">{row['icon']}</div>
+                <span class="news-tag">{row['region']}</span> &nbsp; <span class="news-tag">📍 Source: {row['country']}</span>
+                <h3 style="margin-top: 10px; margin-bottom: 8px; color: #1e293b;">{row['headline']}</h3>
+                <p style="color: #475569; font-size: 14px; line-height: 1.6;">{row['detailed_analysis']}</p>
+                <hr style="margin: 12px 0; border: none; border-top: 1px solid #e2e8f0;">
+                <a href="{row['url']}" target="_blank" style="text-decoration: none; font-weight: bold; color: #29b5e8; font-size: 14px;">⚡ Access Deep Coverage Source →</a>
+            </div>
