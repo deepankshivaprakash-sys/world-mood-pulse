@@ -77,7 +77,46 @@ st.markdown("""
         border-radius: 12px;
         margin-top: 15px;
     }
+    .telemetry-container {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    .telemetry-card {
+        background-color: #ffffff;
+        padding: 15px 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        border-top: 4px solid #29b5e8;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    .telemetry-card h4 {
+        margin: 0 0 8px 0;
+        font-size: 0.85rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .telemetry-card .value {
+        font-size: 1.8rem;
+        font-weight: bold;
+        color: #0f172a;
+        margin: 5px 0;
+    }
+    .telemetry-card .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        margin-top: 5px;
+    }
+    .badge-optimism { background-color: #d1fae5; color: #065f46; }
+    .badge-equilibrium { background-color: #f3f4f6; color: #374151; }
+    .badge-distress { background-color: #fee2e2; color: #991b1b; }
     </style>
+
 """, unsafe_allow_html=True)
 
 # --- UNBREAKABLE OPEN LIVE DATA ENGINE ---
@@ -167,16 +206,62 @@ deltas = {}
 for em in emotions_list:
     deltas[em] = round(this_week_averages[em] - last_week_averages[em], 1)
 
-# --- DATA ASSIGNMENTS ---
+# --- EXTENDED HISTORICAL SIMULATION (30 DAYS) ---
 today = datetime.now()
-dates = [(today - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(6, -1, -1)]
+dates = [(today - timedelta(days=i)).strftime('%Y-%m-%d') for i in range(29, -1, -1)]
 
-history_data = {'Date': dates}
-for em in emotions_list:
-    past_vals = [max(0, live_percentages[em] + random.uniform(-10, 10)) for _ in range(6)]
-    past_vals.append(live_percentages[em])
-    history_data[em] = past_vals
-df_history = pd.DataFrame(history_data)
+# Seed the RNG to keep it stable across app refreshes, but responsive to live values
+rng_hist = random.Random(42)
+
+history_rows = []
+for i in range(30):
+    date_str = dates[i]
+    # If it is today (last index), use the exact live percentages
+    if i == 29:
+        row = {em: live_percentages[em] for em in emotions_list}
+    else:
+        # Add random variations
+        raw_vals = {}
+        for em in emotions_list:
+            noise = rng_hist.uniform(-12, 12)
+            raw_vals[em] = max(2.0, live_percentages[em] + noise)
+        # Normalize to 100%
+        total_vals = sum(raw_vals.values())
+        row = {em: round((raw_vals[em] / total_vals) * 100, 1) for em in emotions_list}
+    row['Date'] = date_str
+    history_rows.append(row)
+
+df_history = pd.DataFrame(history_rows)
+
+# Calculate composite Global Mood Index (GMI)
+# GMI = 50 + Happiness - (Fear * 0.7 + Anger * 0.7 + Sadness * 0.4)
+def calculate_gmi(row):
+    score = 50.0 + row['Happiness'] - (row['Fear'] * 0.7 + row['Anger'] * 0.7 + row['Sadness'] * 0.4)
+    return float(np.clip(score, 0.0, 100.0))
+
+df_history['GMI'] = df_history.apply(calculate_gmi, axis=1)
+
+# Calculate rolling statistics (5-day window)
+df_history['GMI_SMA'] = df_history['GMI'].rolling(window=5, min_periods=1).mean()
+df_history['GMI_STD'] = df_history['GMI'].rolling(window=5, min_periods=1).std().fillna(0.0)
+
+# Volatility Corridor (Bollinger Bands)
+df_history['GMI_Upper'] = np.clip(df_history['GMI_SMA'] + 1.5 * df_history['GMI_STD'], 0.0, 100.0)
+df_history['GMI_Lower'] = np.clip(df_history['GMI_SMA'] - 1.5 * df_history['GMI_STD'], 0.0, 100.0)
+
+# MACD-style Momentum
+df_history['GMI_Momentum'] = df_history['GMI'] - df_history['GMI_SMA']
+
+# RSI-style indicator for Mood
+delta = df_history['GMI'].diff()
+gain = delta.clip(lower=0)
+loss = -delta.clip(upper=0)
+avg_gain = gain.rolling(window=14, min_periods=1).mean()
+avg_loss = loss.rolling(window=14, min_periods=1).mean()
+rs = avg_gain / (avg_loss + 1e-9)
+df_history['GMI_RSI'] = 100.0 - (100.0 / (1.0 + rs))
+df_history['GMI_RSI'] = df_history['GMI_RSI'].fillna(50.0)
+
 
 # --- DYNAMIC SPATIAL SENTIMENT NLP ENGINE ---
 country_keywords = {
@@ -291,12 +376,260 @@ with right_panel:
 st.markdown("---")
 
 # --- TIME SERIES HISTORICAL TREND GRAPHS ---
-st.markdown("### 📈 Historical Sentimental Trajectories")
-fig_trend = go.Figure()
-for emotion in ['Fear', 'Anger', 'Happiness', 'Sadness', 'Neutral']:
-    fig_trend.add_trace(go.Scatter(x=df_history['Date'], y=df_history[emotion], mode='lines+markers', name=emotion))
-fig_trend.update_layout(xaxis_title="Timeline Records", yaxis_title="Percentage Allocation (%)", hovermode="x unified")
-st.plotly_chart(fig_trend, use_container_width=True)
+# --- GLOBAL MOOD STOCK MATRIX TICKER ---
+st.markdown("### 📊 Global Mood Index & Volatility Corridor")
+st.caption("A composite index tracking aggregate emotional volatility, momentum acceleration, and turbulence threshold boundaries.")
+
+# Extract current status metrics from the latest day
+latest_idx = len(df_history) - 1
+latest_gmi = round(df_history.loc[latest_idx, 'GMI'], 1)
+latest_sma = round(df_history.loc[latest_idx, 'GMI_SMA'], 1)
+latest_std = round(df_history.loc[latest_idx, 'GMI_STD'], 1)
+latest_momentum = round(df_history.loc[latest_idx, 'GMI_Momentum'], 1)
+latest_rsi = round(df_history.loc[latest_idx, 'GMI_RSI'], 1)
+
+# Define Regime Badge & Classification
+if latest_gmi >= 60.0:
+    regime_class = "badge-optimism"
+    regime_title = "Euphoria & Optimism"
+    regime_emoji = "🟢"
+elif latest_gmi <= 40.0:
+    regime_class = "badge-distress"
+    regime_title = "Systemic Distress"
+    regime_emoji = "🔴"
+else:
+    regime_class = "badge-equilibrium"
+    regime_title = "Neutral Equilibrium"
+    regime_emoji = "🟡"
+
+# Define Volatility Category
+if latest_std < 3.0:
+    vol_text = "Stable"
+    vol_class = "badge-optimism"
+    vol_emoji = "🌱"
+elif latest_std < 6.0:
+    vol_text = "Moderate"
+    vol_class = "badge-equilibrium"
+    vol_emoji = "⚡"
+else:
+    vol_text = "High Turbulence"
+    vol_class = "badge-distress"
+    vol_emoji = "🔥"
+
+# Define Momentum Category
+if latest_momentum > 0.5:
+    mom_text = "Accelerating"
+    mom_class = "badge-optimism"
+    mom_emoji = "▲"
+elif latest_momentum < -0.5:
+    mom_text = "Decelerating"
+    mom_class = "badge-distress"
+    mom_emoji = "▼"
+else:
+    mom_text = "Sustained"
+    mom_class = "badge-equilibrium"
+    mom_emoji = "⚖️"
+
+# Define RSI Category
+if latest_rsi >= 70.0:
+    rsi_text = "Overbought Joy"
+    rsi_class = "badge-optimism"
+elif latest_rsi <= 30.0:
+    rsi_text = "Oversold Panic"
+    rsi_class = "badge-distress"
+else:
+    rsi_text = "Stable Momentum"
+    rsi_class = "badge-equilibrium"
+
+tel_col1, tel_col2, tel_col3, tel_col4 = st.columns(4)
+
+with tel_col1:
+    st.markdown(f"""
+    <div class="telemetry-card" style="border-top-color: {'#10b981' if latest_gmi >= 60.0 else '#ef4444' if latest_gmi <= 40.0 else '#6b7280'};">
+        <h4>Global Mood Index (GMI)</h4>
+        <div class="value">{latest_gmi}</div>
+        <span class="badge {regime_class}">{regime_emoji} {regime_title}</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+with tel_col2:
+    st.markdown(f"""
+    <div class="telemetry-card" style="border-top-color: {'#10b981' if latest_std < 3.0 else '#ef4444' if latest_std >= 6.0 else '#6b7280'};">
+        <h4>Emotional Turbulence</h4>
+        <div class="value">±{latest_std}%</div>
+        <span class="badge {vol_class}">{vol_emoji} {vol_text} Volatility</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+with tel_col3:
+    st.markdown(f"""
+    <div class="telemetry-card" style="border-top-color: {'#10b981' if latest_momentum > 0.5 else '#ef4444' if latest_momentum < -0.5 else '#6b7280'};">
+        <h4>Mood Momentum</h4>
+        <div class="value">{latest_momentum:+.1f}</div>
+        <span class="badge {mom_class}">{mom_emoji} {mom_text} Trend</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+with tel_col4:
+    st.markdown(f"""
+    <div class="telemetry-card" style="border-top-color: {'#10b981' if latest_rsi >= 70.0 else '#ef4444' if latest_rsi <= 30.0 else '#6b7280'};">
+        <h4>Sentiment RSI (14D)</h4>
+        <div class="value">{round(latest_rsi, 1)}</div>
+        <span class="badge {rsi_class}">{rsi_text}</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+from plotly.subplots import make_subplots
+
+fig_composite = make_subplots(
+    rows=2, cols=1,
+    shared_xaxes=True,
+    vertical_spacing=0.07,
+    row_heights=[0.72, 0.28],
+    subplot_titles=("", "")
+)
+
+# 1. Add Volatility Corridor Shaded Area (Lower & Upper Bollinger Bands)
+fig_composite.add_trace(
+    go.Scatter(
+        x=df_history['Date'],
+        y=df_history['GMI_Lower'],
+        mode='lines',
+        line=dict(width=0),
+        showlegend=False,
+        hoverinfo='skip'
+    ),
+    row=1, col=1
+)
+
+fig_composite.add_trace(
+    go.Scatter(
+        x=df_history['Date'],
+        y=df_history['GMI_Upper'],
+        fill='tonexty',
+        fillcolor='rgba(41, 181, 232, 0.08)',
+        mode='lines',
+        line=dict(width=0),
+        name='Volatility Corridor (Bollinger Bounds)',
+        legendgroup='g1'
+    ),
+    row=1, col=1
+)
+
+# 2. Add GMI SMA 5 Line (Trend Line)
+fig_composite.add_trace(
+    go.Scatter(
+        x=df_history['Date'],
+        y=df_history['GMI_SMA'],
+        mode='lines',
+        line=dict(color='rgba(15, 23, 42, 0.35)', width=1.5, dash='dash'),
+        name='5-Day Moving Average',
+        legendgroup='g1'
+    ),
+    row=1, col=1
+)
+
+# 3. Add primary GMI Line (Neon Glowing Line)
+hover_texts = []
+for idx, r in df_history.iterrows():
+    text = (
+        f"<b>Date:</b> {r['Date']}<br>"
+        f"<b>Global Mood Index (GMI):</b> {round(r['GMI'], 1)} / 100<br>"
+        f"<span style='color:#10b981'>😊 Happiness:</span> {r['Happiness']}%<br>"
+        f"<span style='color:#ef4444'>😨 Fear:</span> {r['Fear']}%<br>"
+        f"<span style='color:#f59e0b'>😡 Anger:</span> {r['Anger']}%<br>"
+        f"<span style='color:#3b82f6'>😢 Sadness:</span> {r['Sadness']}%<br>"
+        f"<span style='color:#6b7280'>😐 Neutral:</span> {r['Neutral']}%"
+    )
+    hover_texts.append(text)
+
+fig_composite.add_trace(
+    go.Scatter(
+        x=df_history['Date'],
+        y=df_history['GMI'],
+        mode='lines+markers',
+        line=dict(color='#0ea5e9', width=3.5),
+        marker=dict(
+            size=6,
+            color='#0ea5e9',
+            line=dict(color='#ffffff', width=1.5)
+        ),
+        name='Global Mood Index (GMI)',
+        hovertext=hover_texts,
+        hoverinfo='text',
+        legendgroup='g1'
+    ),
+    row=1, col=1
+)
+
+# 4. Add MACD-style Momentum bars in row 2
+momentum_colors = ['#10b981' if val >= 0 else '#ef4444' for val in df_history['GMI_Momentum']]
+
+fig_composite.add_trace(
+    go.Bar(
+        x=df_history['Date'],
+        y=df_history['GMI_Momentum'],
+        marker_color=momentum_colors,
+        name='Mood Momentum (MACD)',
+        hovertext=[f"<b>Date:</b> {d}<br><b>Momentum:</b> {round(val, 2)}" for d, val in zip(df_history['Date'], df_history['GMI_Momentum'])],
+        hoverinfo='text',
+        legendgroup='g2'
+    ),
+    row=2, col=1
+)
+
+# 5. Add Horizontal Threshold Lines for Regime Zones in Row 1
+fig_composite.add_hline(y=60.0, line_dash="dot", line_color="#10b981", line_width=1, annotation_text="Euphoria Threshold (60.0)", annotation_position="top left", row=1, col=1)
+fig_composite.add_hline(y=40.0, line_dash="dot", line_color="#ef4444", line_width=1, annotation_text="Distress Threshold (40.0)", annotation_position="bottom left", row=1, col=1)
+
+# Shaded horizontal background zones
+fig_composite.add_hrect(y0=60.0, y1=100.0, fillcolor="rgba(16, 185, 129, 0.025)", line_width=0, row=1, col=1)
+fig_composite.add_hrect(y0=40.0, y1=60.0, fillcolor="rgba(107, 114, 128, 0.015)", line_width=0, row=1, col=1)
+fig_composite.add_hrect(y0=0.0, y1=40.0, fillcolor="rgba(239, 68, 68, 0.025)", line_width=0, row=1, col=1)
+
+# Layout adjustments
+fig_composite.update_layout(
+    height=580,
+    margin=dict(l=40, r=20, t=10, b=20),
+    hovermode='x unified',
+    legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="right",
+        x=1
+    ),
+    plot_bgcolor='#ffffff',
+    paper_bgcolor='#ffffff'
+)
+
+# Axes styling
+fig_composite.update_xaxes(
+    showgrid=True,
+    gridcolor='#f1f5f9',
+    linecolor='#cbd5e1',
+    tickfont=dict(size=10, color='#64748b')
+)
+fig_composite.update_yaxes(
+    showgrid=True,
+    gridcolor='#f1f5f9',
+    linecolor='#cbd5e1',
+    tickfont=dict(size=10, color='#64748b'),
+    row=1, col=1
+)
+fig_composite.update_yaxes(
+    showgrid=True,
+    gridcolor='#f1f5f9',
+    linecolor='#cbd5e1',
+    tickfont=dict(size=10, color='#64748b'),
+    row=2, col=1
+)
+
+fig_composite.update_yaxes(title_text="GMI Score (0-100)", row=1, col=1)
+fig_composite.update_yaxes(title_text="Velocity (±)", row=2, col=1)
+fig_composite.update_xaxes(title_text="Timeline Records (30 Days)", row=2, col=1)
+
+st.plotly_chart(fig_composite, use_container_width=True)
 
 st.markdown("---")
 
