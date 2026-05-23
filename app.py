@@ -8,41 +8,24 @@ from datetime import datetime, timedelta
 # --- STYLING & CONFIG ---
 st.set_page_config(page_title="World Mood Pulse Pro", layout="wide", page_icon="🌍")
 
-# Enhanced Custom Card Styles via CSS Injection
+# Clean, safe background card layout injection
 st.markdown("""
     <style>
-    .news-card {
+    .news-card-box {
         background-color: #ffffff; 
-        padding: 24px; 
+        padding: 20px; 
         border-radius: 12px; 
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+        box-shadow: 0 4px 10px rgba(0,0,0,0.06); 
         margin-bottom: 20px;
-        border-left: 6px solid #29b5e8;
+        border-top: 4px solid #29b5e8;
     }
-    .fear-card { border-left-color: #d9534f; }
-    .anger-card { border-left-color: #f0ad4e; }
-    .happiness-card { border-left-color: #5cb85c; }
-    .sadness-card { border-left-color: #0275d8; }
-    .neutral-card { border-left-color: #292b2c; }
-    
-    .news-tag {
+    .tag-bubble {
         background-color: #eef2f5;
-        padding: 4px 10px;
+        padding: 3px 8px;
         border-radius: 4px;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: bold;
         color: #4a5568;
-    }
-    .img-placeholder {
-        background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
-        height: 140px;
-        border-radius: 8px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #64748b;
-        font-size: 28px;
-        margin-bottom: 12px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -76,7 +59,7 @@ def generate_rich_database():
         {
             "headline": "Cybersecurity Breaches Compromise Infrastructure Hubs Across Three Capitals", 
             "emotion": "Fear", "country": "CAN", "region": "Global Security", "icon": "🔒",
-            "detailed_analysis": "A coordinated digital assault has targeting power management nodes and metropolitan transit signals. Defense taskforces are actively managing structural patches while citizens express growing security vulnerabilities.",
+            "detailed_analysis": "A coordinated digital assault has targeted power management nodes and metropolitan transit signals. Defense taskforces are actively managing structural patches while citizens express growing security vulnerabilities.",
             "url": "https://wired.com"
         },
         {
@@ -138,6 +121,7 @@ def generate_rich_database():
     
     return df_history, df_headlines, df_map
 
+# --- FIXED EXECUTION LINE ---
 df_history, df_headlines, df_map = generate_rich_database()
 
 # --- HEADER APP SECTION ---
@@ -161,7 +145,7 @@ with col5: st.metric("😐 Neutral Index", f"{pulse_vals['Neutral']}%", delta="-
 st.markdown("---")
 
 # --- CLICKABLE INTERACTIVE EXPLORER ---
-st.markdown("### 🔍 Emotion Deep-Dive Explorer & Rich Media Feed")
+st.markdown("### 🔍 Emotion Deep-Dive Explorer & Premium Media Cards")
 selected_emotion = st.radio(
     "Select Target Emotion Engine to Filter Data Ecosystem:",
     ["Fear", "Anger", "Happiness", "Sadness", "Neutral"],
@@ -176,18 +160,30 @@ with left_panel:
     
     if not filtered_news.empty:
         for idx, row in filtered_news.iterrows():
-            card_class = f"news-card {selected_emotion.lower()}-card"
-            
-            # Formatted using standard string replacements to prevent f-string bracket syntax crashes
-            card_html = """
-            <div class="{card_style}">
-                <div class="img-placeholder">{icon}</div>
-                <span class="news-tag">{region}</span> &nbsp; <span class="news-tag">📍 Source: {country}</span>
-                <h3 style="margin-top: 10px; margin-bottom: 8px; color: #1e293b;">{title}</h3>
-                <p style="color: #475569; font-size: 14px; line-height: 1.6;">{analysis}</p>
-                <hr style="margin: 12px 0; border: none; border-top: 1px solid #e2e8f0;">
-                <a href="{link}" target="_blank" style="text-decoration: none; font-weight: bold; color: #29b5e8; font-size: 14px;">⚡ Access Deep Coverage Source →</a>
-            </div>
-            """.format(
-                card_style=card_class,
-                icon=row['icon'],
+            with st.container():
+                st.markdown('<div class="news-card-box">', unsafe_allow_html=True)
+                st.subheader(f"{row['icon']} {row['headline']}")
+                st.markdown(f"<span class='tag-bubble'>{row['region']}</span> &nbsp;&nbsp; <span class='tag-bubble'>📍 Source: {row['country']}</span>", unsafe_allow_html=True)
+                st.write("")
+                st.write(row['detailed_analysis'])
+                st.markdown(f"🔗 [Access Deep Coverage Source Website]({row['url']})")
+                st.markdown('</div>', unsafe_allow_html=True)
+                st.write("")
+    else:
+        st.write("No major headline spikes currently registered for this channel.")
+
+with right_panel:
+    st.subheader("Regional Vulnerability Contribution")
+    fig_pie = px.pie(df_map, values=selected_emotion, names='CountryISO', 
+                     title=f"Top Country Impact Variables for {selected_emotion}",
+                     color_discrete_sequence=px.colors.sequential.Plotly3)
+    fig_pie.update_layout(margin=dict(l=20, r=20, t=40, b=20))
+    st.plotly_chart(fig_pie, use_container_width=True)
+
+st.markdown("---")
+
+# --- TIME SERIES HISTORICAL TREND GRAPHS ---
+st.markdown("### 📈 Historical Sentimental Trajectories")
+fig_trend = go.Figure()
+for emotion in ['Fear', 'Anger', 'Happiness', 'Sadness', 'Neutral']:
+    # Clean up array parsing using sequence extraction
