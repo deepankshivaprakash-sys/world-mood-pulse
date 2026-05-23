@@ -366,12 +366,89 @@ with left_panel:
         st.write("No major headline spikes currently registered for this channel in this live stream slice.")
 
 with right_panel:
-    st.subheader("Regional Vulnerability Contribution")
-    fig_pie = px.pie(df_map, values=selected_emotion, names='CountryISO', 
-                     title=f"Top Country Impact Variables for {selected_emotion}",
-                     color_discrete_sequence=px.colors.sequential.Plotly3)
-    fig_pie.update_layout(margin=dict(l=20, r=20, t=40, b=20))
-    st.plotly_chart(fig_pie, use_container_width=True)
+    st.markdown("### 📊 Weekly Sentiment Evolution Matrix")
+    st.caption("A comparative profiling of global emotional velocity: This Week vs. Last Week.")
+    
+    st.subheader("🕸️ Emotional Profile Shift (Radar)")
+    
+    categories = ['Fear', 'Anger', 'Happiness', 'Sadness', 'Neutral']
+    categories_loop = categories + [categories[0]]
+    
+    this_week_vals = [this_week_averages[em] for em in categories]
+    this_week_vals_loop = this_week_vals + [this_week_vals[0]]
+    
+    last_week_vals = [last_week_averages[em] for em in categories]
+    last_week_vals_loop = last_week_vals + [last_week_vals[0]]
+    
+    fig_radar = go.Figure()
+    
+    fig_radar.add_trace(go.Scatterpolar(
+        r=last_week_vals_loop,
+        theta=categories_loop,
+        fill='toself',
+        fillcolor='rgba(255, 99, 132, 0.25)',
+        line=dict(color='rgba(255, 99, 132, 0.8)', width=2, dash='dot'),
+        name='Last Week'
+    ))
+    
+    fig_radar.add_trace(go.Scatterpolar(
+        r=this_week_vals_loop,
+        theta=categories_loop,
+        fill='toself',
+        fillcolor='rgba(41, 181, 232, 0.35)',
+        line=dict(color='#29b5e8', width=3),
+        name='This Week'
+    ))
+    
+    fig_radar.update_layout(
+        polar=dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0, max(max(this_week_vals) + 10, max(last_week_vals) + 10)]
+            )
+        ),
+        showlegend=True,
+        margin=dict(l=40, r=40, t=40, b=40)
+    )
+    
+    st.plotly_chart(fig_radar, use_container_width=True)
+    
+    st.subheader("⚡ Sentiment Velocity Metrics")
+    
+    icons_map = {'Fear': '😨', 'Anger': '😡', 'Happiness': '😊', 'Sadness': '😢', 'Neutral': '😐'}
+    
+    for em in categories:
+        delta = deltas[em]
+        delta_str = f"{delta:+.1f}%"
+        
+        if delta > 0.5:
+            badge_class = "delta-badge-up"
+            badge_text = f"▲ {delta_str} Rising"
+        elif delta < -0.5:
+            badge_class = "delta-badge-down"
+            badge_text = f"▼ {delta_str} Cooling"
+        else:
+            badge_class = "delta-badge-stable"
+            badge_text = f"⚖️ {delta_str} Stable"
+            
+        card_html = f"""
+        <div class="compare-card-box" style="border-left-color: {'#10b981' if delta > 0.5 else '#ef4444' if delta < -0.5 else '#6b7280'};">
+            <div>
+                <span style="font-size: 1.2rem; margin-right: 8px;">{icons_map[em]}</span>
+                <strong style="font-size: 1rem; color: #1e293b;">{em} Index</strong>
+                <span style="color: #64748b; font-size: 0.85rem; margin-left: 10px;">
+                    Last Week: {last_week_averages[em]}% &rarr; This Week: {this_week_averages[em]}%
+                </span>
+            </div>
+            <div>
+                <span class="{badge_class}">{badge_text}</span>
+            </div>
+        </div>
+        """
+        st.markdown(card_html, unsafe_allow_html=True)
+        
+
+
 
 st.markdown("---")
 
@@ -641,111 +718,5 @@ fig_map = px.choropleth(df_map, locations="CountryISO", color=selected_emotion,
 fig_map.update_layout(geo=dict(showframe=False, projection_type='equirectangular'))
 st.plotly_chart(fig_map, use_container_width=True)
 
-st.markdown("---")
 
-# --- WEEKLY SENTIMENT EVOLUTION MATRIX ---
-st.markdown("### 📊 Weekly Sentiment Evolution Matrix")
-st.caption("A comparative profiling of global emotional velocity: This Week vs. Last Week.")
-
-comp_left, comp_right = st.columns(2)
-
-with comp_left:
-    st.subheader("🕸️ Emotional Profile Shift (Radar)")
-    
-    categories = ['Fear', 'Anger', 'Happiness', 'Sadness', 'Neutral']
-    categories_loop = categories + [categories[0]]
-    
-    this_week_vals = [this_week_averages[em] for em in categories]
-    this_week_vals_loop = this_week_vals + [this_week_vals[0]]
-    
-    last_week_vals = [last_week_averages[em] for em in categories]
-    last_week_vals_loop = last_week_vals + [last_week_vals[0]]
-    
-    fig_radar = go.Figure()
-    
-    fig_radar.add_trace(go.Scatterpolar(
-        r=last_week_vals_loop,
-        theta=categories_loop,
-        fill='toself',
-        fillcolor='rgba(255, 99, 132, 0.25)',
-        line=dict(color='rgba(255, 99, 132, 0.8)', width=2, dash='dot'),
-        name='Last Week'
-    ))
-    
-    fig_radar.add_trace(go.Scatterpolar(
-        r=this_week_vals_loop,
-        theta=categories_loop,
-        fill='toself',
-        fillcolor='rgba(41, 181, 232, 0.35)',
-        line=dict(color='#29b5e8', width=3),
-        name='This Week'
-    ))
-    
-    fig_radar.update_layout(
-        polar=dict(
-            radialaxis=dict(
-                visible=True,
-                range=[0, max(max(this_week_vals) + 10, max(last_week_vals) + 10)]
-            )
-        ),
-        showlegend=True,
-        margin=dict(l=40, r=40, t=40, b=40)
-    )
-    
-    st.plotly_chart(fig_radar, use_container_width=True)
-
-with comp_right:
-    st.subheader("⚡ Sentiment Velocity Metrics")
-    
-    icons_map = {'Fear': '😨', 'Anger': '😡', 'Happiness': '😊', 'Sadness': '😢', 'Neutral': '😐'}
-    
-    for em in categories:
-        delta = deltas[em]
-        delta_str = f"{delta:+.1f}%"
-        
-        if delta > 0.5:
-            badge_class = "delta-badge-up"
-            badge_text = f"▲ {delta_str} Rising"
-        elif delta < -0.5:
-            badge_class = "delta-badge-down"
-            badge_text = f"▼ {delta_str} Cooling"
-        else:
-            badge_class = "delta-badge-stable"
-            badge_text = f"⚖️ {delta_str} Stable"
-            
-        card_html = f"""
-        <div class="compare-card-box" style="border-left-color: {'#10b981' if delta > 0.5 else '#ef4444' if delta < -0.5 else '#6b7280'};">
-            <div>
-                <span style="font-size: 1.2rem; margin-right: 8px;">{icons_map[em]}</span>
-                <strong style="font-size: 1rem; color: #1e293b;">{em} Index</strong>
-                <span style="color: #64748b; font-size: 0.85rem; margin-left: 10px;">
-                    Last Week: {last_week_averages[em]}% &rarr; This Week: {this_week_averages[em]}%
-                </span>
-            </div>
-            <div>
-                <span class="{badge_class}">{badge_text}</span>
-            </div>
-        </div>
-        """
-        st.markdown(card_html, unsafe_allow_html=True)
-        
-    # Add dynamic visual insight text block
-    max_increase_em = max(deltas, key=deltas.get)
-    max_decrease_em = min(deltas, key=deltas.get)
-    
-    insight_text = f"**Weekly Insight Analysis:** "
-    if deltas[max_increase_em] > 0.5:
-        insight_text += f"The global emotional profile indicates a notable shift with **{max_increase_em}** experiencing the largest growth trajectory (+{deltas[max_increase_em]:.1f}%). "
-    else:
-        insight_text += f"The emotional trends are holding relatively steady compared to last week. "
-        
-    if deltas[max_decrease_em] < -0.5:
-        insight_text += f"Conversely, **{max_decrease_em}** has cooled down significantly, contracting by {abs(deltas[max_decrease_em]):.1f}%, indicating shifting public concerns in the active news coverage stream."
-        
-    st.markdown(f"""
-    <div class="insight-box">
-        <h4 style="margin-top: 0; color: #0369a1; font-size: 1.1rem;">💡 Dynamic Sentiment Takeaways</h4>
-        <p style="margin: 0; font-size: 0.95rem; line-height: 1.5; color: #0c4a6e;">{insight_text}</p>
-    </div>
-    """, unsafe_allow_html=True)
 
