@@ -168,7 +168,7 @@ selected_emotion = st.radio(
     horizontal=True
 )
 
-left_panel, right_panel = st.columns([3, 2]) # 3:2 layout gives the news feed more screen size
+left_panel, right_panel = st.columns(2)
 
 with left_panel:
     st.subheader(f"📰 Premium Analytical Coverage: {selected_emotion}")
@@ -176,15 +176,18 @@ with left_panel:
     
     if not filtered_news.empty:
         for idx, row in filtered_news.iterrows():
-            # Injects dynamic style blocks based on the selected emotion class
             card_class = f"news-card {selected_emotion.lower()}-card"
             
-            st.markdown(f"""
-            <div class="{card_class}">
-                <div class="img-placeholder">{row['icon']}</div>
-                <span class="news-tag">{row['region']}</span> &nbsp; <span class="news-tag">📍 Source: {row['country']}</span>
-                <h3 style="margin-top: 10px; margin-bottom: 8px; color: #1e293b;">{row['headline']}</h3>
-                <p style="color: #475569; font-size: 14px; line-height: 1.6;">{row['detailed_analysis']}</p>
+            # Formatted using standard string replacements to prevent f-string bracket syntax crashes
+            card_html = """
+            <div class="{card_style}">
+                <div class="img-placeholder">{icon}</div>
+                <span class="news-tag">{region}</span> &nbsp; <span class="news-tag">📍 Source: {country}</span>
+                <h3 style="margin-top: 10px; margin-bottom: 8px; color: #1e293b;">{title}</h3>
+                <p style="color: #475569; font-size: 14px; line-height: 1.6;">{analysis}</p>
                 <hr style="margin: 12px 0; border: none; border-top: 1px solid #e2e8f0;">
-                <a href="{row['url']}" target="_blank" style="text-decoration: none; font-weight: bold; color: #29b5e8; font-size: 14px;">⚡ Access Deep Coverage Source →</a>
+                <a href="{link}" target="_blank" style="text-decoration: none; font-weight: bold; color: #29b5e8; font-size: 14px;">⚡ Access Deep Coverage Source →</a>
             </div>
+            """.format(
+                card_style=card_class,
+                icon=row['icon'],
