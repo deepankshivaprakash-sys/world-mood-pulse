@@ -25,13 +25,14 @@ def generate_mock_database():
     history_records = []
     for d in dates:
         scores = np.random.dirichlet(np.ones(5) * 5) * 100
+        # Fixed array rounding using np.round instead of standard round
         history_records.append({
             'Date': d.strftime('%Y-%m-%d'),
-            'Fear': round(scores, 1),
-            'Anger': round(scores, 1),
-            'Happiness': round(scores, 1),
-            'Sadness': round(scores, 1),
-            'Neutral': round(scores, 1)
+            'Fear': np.round(scores[0], 1),
+            'Anger': np.round(scores[1], 1),
+            'Happiness': np.round(scores[2], 1),
+            'Sadness': np.round(scores[3], 1),
+            'Neutral': np.round(scores[4], 1)
         })
     df_history = pd.DataFrame(history_records)
     
@@ -96,7 +97,7 @@ def generate_mock_database():
         c_scores = np.random.dirichlet(np.ones(5) * 10) * 100
         map_records.append({
             'CountryISO': c,
-            'Fear': c_scores, 'Anger': c_scores, 'Happiness': c_scores, 'Sadness': c_scores, 'Neutral': c_scores,
+            'Fear': c_scores[0], 'Anger': c_scores[1], 'Happiness': c_scores[2], 'Sadness': c_scores[3], 'Neutral': c_scores[4],
             'Dominant': ['Fear', 'Anger', 'Happiness', 'Sadness', 'Neutral'][np.argmax(c_scores)]
         })
     df_map = pd.DataFrame(map_records)
@@ -157,8 +158,8 @@ with left_panel:
             st.markdown(f"#### 📰 {row['headline']}")
             st.markdown(f"**Origin Country:** `{row['country']}`")
             st.markdown(f"*AI Reason Summary:* {row['summary']}")
-            # 🔗 THIS ADDS THE CLICKABLE LINK BUTTON BELOW EACH SUMMARY
-            st.markdown(f"🔗 [Read Detailed Article on {row['headline'].split()[0]}...]({row['url']})")
+            # 🔗 Clickable markdown hyperlink setup
+            st.markdown(f"🔗 [Read Detailed Article here]({row['url']})")
             st.markdown("---")
     else:
         st.write("No major headline spikes currently registered for this metric channel.")
