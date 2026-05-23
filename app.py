@@ -27,6 +27,9 @@ st.markdown("""
         margin-bottom: 20px;
         border-top: 4px solid #29b5e8;
     }
+    .news-card-box h3 {
+        color: #1e293b !important;
+    }
     .tag-bubble {
         background-color: #eef2f5;
         padding: 3px 8px;
@@ -94,7 +97,7 @@ st.markdown("""
     .telemetry-card h4 {
         margin: 0 0 8px 0;
         font-size: 0.85rem;
-        color: #64748b;
+        color: #64748b !important;
         text-transform: uppercase;
         letter-spacing: 0.05em;
     }
