@@ -137,7 +137,7 @@ def fetch_real_live_news():
     try:
         feed = feedparser.parse(rss_url)
         if feed.bozo and 'bozo_exception' in feed:
-            st.sidebar.error(f"Feed Parser Error: {feed.bozo_exception}")
+            st.error(f"Feed Parser Error: {feed.bozo_exception}")
         for entry in feed.entries[:40]: # process top 40 live headlines
             title = entry.title
             link = entry.link
@@ -166,9 +166,10 @@ def fetch_real_live_news():
                     "icon": icons[assigned_emotion], "detailed_analysis": str(summary), "url": str(link)
                 })
         if len(articles) > 0:
+            st.info(f"⚡ Live Data Engine Active: Successfully parsed and analyzed {len(articles)} real-time global news headlines.")
             return pd.DataFrame(articles)
     except Exception as e:
-        st.sidebar.error(f"Exception fetching RSS: {e}")
+        st.error(f"Exception fetching RSS: {e}")
         
     # 🌍 RECONFIGURED FALLBACK: Distributed unevenly so values look natural (33.3%, 22.2%, etc.)
     fallback_pool = [
