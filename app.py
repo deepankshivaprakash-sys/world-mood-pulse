@@ -1,3 +1,9 @@
+import ssl
+
+# Fix macOS SSL certificate verification issues for feedparser
+if hasattr(ssl, '_create_unverified_context'):
+    ssl._create_default_https_context = ssl._create_unverified_context
+
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -8,11 +14,6 @@ import feedparser
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from datetime import datetime, timedelta
 import random
-import ssl
-
-# Fix macOS SSL certificate verification issues for feedparser
-if hasattr(ssl, '_create_unverified_context'):
-    ssl._create_default_https_context = ssl._create_unverified_context
 
 # --- STYLING & CONFIG ---
 st.set_page_config(page_title="World Mood Pulse Live", layout="wide", page_icon="🌍")
@@ -123,7 +124,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- UNBREAKABLE OPEN LIVE DATA ENGINE ---
-@st.cache_data(ttl=600)
+# @st.cache_data(ttl=600)
 def fetch_real_live_news():
     columns = ["headline", "emotion", "country", "region", "icon", "detailed_analysis", "url"]
     rss_url = "https://news.google.com/rss/search?q=world+news&hl=en-US&gl=US&ceid=US:en"
@@ -135,6 +136,8 @@ def fetch_real_live_news():
     
     try:
         feed = feedparser.parse(rss_url)
+        if feed.bozo and 'bozo_exception' in feed:
+            st.sidebar.error(f"Feed Parser Error: {feed.bozo_exception}")
         for entry in feed.entries[:40]: # process top 40 live headlines
             title = entry.title
             link = entry.link
@@ -165,7 +168,7 @@ def fetch_real_live_news():
         if len(articles) > 0:
             return pd.DataFrame(articles)
     except Exception as e:
-        print(f"Error fetching RSS: {e}")
+        st.sidebar.error(f"Exception fetching RSS: {e}")
         
     # 🌍 RECONFIGURED FALLBACK: Distributed unevenly so values look natural (33.3%, 22.2%, etc.)
     fallback_pool = [
