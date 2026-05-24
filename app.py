@@ -127,7 +127,7 @@ st.markdown("""
 # @st.cache_data(ttl=600)
 def fetch_real_live_news():
     columns = ["headline", "emotion", "country", "region", "icon", "detailed_analysis", "url"]
-    rss_url = "https://news.google.com/rss/search?q=world+news&hl=en-US&gl=US&ceid=US:en"
+    rss_url = "http://feeds.bbci.co.uk/news/world/rss.xml"
     emotions = ['Fear', 'Anger', 'Happiness', 'Sadness', 'Neutral']
     icons = {'Fear': '😨', 'Anger': '😡', 'Happiness': '😊', 'Sadness': '😢', 'Neutral': '😐'}
     
@@ -149,7 +149,7 @@ def fetch_real_live_news():
             title = entry.title
             link = entry.link
             summary = entry.get('summary', 'No live summary provided.')
-            source = entry.source.title if hasattr(entry, 'source') else "Global Intelligence"
+            source = entry.source.title if hasattr(entry, 'source') else "BBC World News"
             
             if title and link:
                 sentiment_scores = analyzer.polarity_scores(title)
