@@ -135,9 +135,16 @@ def fetch_real_live_news():
     articles = []
     
     try:
-        feed = feedparser.parse(rss_url)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(rss_url, headers=headers, timeout=10)
+        response.raise_for_status()
+        
+        feed = feedparser.parse(response.content)
         if feed.bozo and 'bozo_exception' in feed:
-            st.error(f"Feed Parser Error: {feed.bozo_exception}")
+            st.warning(f"Feed Parser Warning: {feed.bozo_exception}")
+            
         for entry in feed.entries[:40]: # process top 40 live headlines
             title = entry.title
             link = entry.link
