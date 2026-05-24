@@ -316,8 +316,8 @@ df_map = pd.DataFrame(map_data)
 
 
 # --- HEADER APP SECTION ---
-st.title("🌍 World Mood Pulse Pro")
-st.caption("Live Real-Time Global Sentiment Engine • Structural Dashboard Matrix")
+st.title("Welcome to World Mood Pulse Pro")
+st.caption("this is a project prototype")
 st.write("")
 
 # --- LIVE METRIC PULSE DISPLAY ---
