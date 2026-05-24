@@ -124,7 +124,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- UNBREAKABLE OPEN LIVE DATA ENGINE ---
-# @st.cache_data(ttl=600)
+@st.cache_data(ttl=600)
 def fetch_real_live_news():
     columns = ["headline", "emotion", "country", "region", "icon", "detailed_analysis", "url"]
     rss_url = "http://feeds.bbci.co.uk/news/world/rss.xml"
